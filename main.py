@@ -1,43 +1,31 @@
 import streamlit as st
-from multiagents import agent_team
+import os
+from dotenv import load_dotenv
 from agno.agent import Agent
+from agno.models.groq import Groq
+from agno.tools.duckduckgo import DuckDuckGoTools
 
-st.set_page_config(page_title="AI Analyst Chat", page_icon="🤖", layout="centered", initial_sidebar_state="collapsed")
+# Load environment variables
+load_dotenv()
+os.environ["GROQ_API_KEY"] = os.getenv("GROQ_API_KEY")
 
-# Custom dark mode styling
-st.markdown(
-    """
-    <style>
-    body, .stApp { background: #000 !important; color: #fff !important; }
-    .stTextInput > div > div > input, .stTextArea > div > textarea {
-        background: #111 !important; color: #fff !important; border-radius: 1.5em !important;
-    }
-    .stButton > button { background: #fff !important; color: #000 !important; border-radius: 1.5em !important; }
-    .stChatMessage { background: #18181b !important; color: #fff !important; border-radius: 1.5em !important; margin-bottom: 0.5em; padding: 1em; }
-    </style>
-    """,
-    unsafe_allow_html=True
+# Initialize the agent
+agent = Agent(
+    model=Groq(id="llama-3.3-70b-versatile"),
+    description="Engineered to assist First, Second, Third, and Final year engineering students of all branches. Delivers high-quality, exam-ready answers in a structured format add detailed theory as per exam: Definition ➤ Explanation ➤ Diagram (if required) ➤ Example ➤ Applications. Perfect for theory-based university exams like SPPU. Designed to boost marks and clarity with every response",
+    tools=[DuckDuckGoTools()],
+    markdown=True
 )
 
-st.title("🤖 AI Analyst Chat")
+st.set_page_config(page_title="AI Analyst Chat Assistant", layout="wide")
+st.title("AI Analyst Chat Assistant")
+st.write("""
+Ask any engineering theory question and get a detailed, exam-ready answer!
+""")
 
-if 'messages' not in st.session_state:
-    st.session_state['messages'] = []
+user_input = st.text_area("Enter your question:", "What is data science? Tell me its advantages, uses, and future.")
 
-# Display chat history
-for msg in st.session_state['messages']:
-    with st.chat_message(msg['role']):
-        st.markdown(msg['content'])
-
-user_input = st.chat_input("Type your message...")
-if user_input:
-    # Show user message
-    st.session_state['messages'].append({'role': 'user', 'content': user_input})
-    with st.chat_message('user'):
-        st.markdown(user_input)
-    # Get agent response
-    with st.spinner('Thinking...'):
-        response = agent_team.run(user_input)
-    st.session_state['messages'].append({'role': 'assistant', 'content': response})
-    with st.chat_message('assistant'):
+if st.button("Get Answer"):
+    with st.spinner("Generating answer..."):
+        response = agent.get_response(user_input)
         st.markdown(response)
